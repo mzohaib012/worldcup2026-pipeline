@@ -1,0 +1,90 @@
+graph TB
+    subgraph Sources["📡 DATA SOURCES"]
+        A1["API-Football /<br/>football-data.org<br/>(2026 World Cup Live Feed —<br/>48 Teams, 12 Groups)"]
+        A2["Kaggle Datasets<br/>(1930–2022 World Cups)"]
+        A3["Wikipedia / FBref<br/>(Player Career & Photos)"]
+    end
+
+    subgraph Ingestion["📥 INGESTION LAYER"]
+        B1["Python Poller<br/>(Live Event Fetcher)"]
+        B2["Airflow DAG<br/>(Batch Historical Loader)"]
+    end
+
+    subgraph DQ["✅ DATA QUALITY"]
+        DQ1["Great Expectations<br/>(Validate Before Load)"]
+    end
+
+    subgraph Streaming["⚡ STREAMING PIPELINE"]
+        C1["Kafka Topic<br/>raw_match_events"]
+        C2["Spark Structured Streaming<br/>(Parse & Enrich Events)"]
+    end
+
+    subgraph Storage["🗄️ STORAGE LAYER"]
+        D1[("PostgreSQL<br/>Teams, Players,<br/>Squads, Matches")]
+        D2[("TimescaleDB<br/>Match Events Hypertable")]
+    end
+
+    subgraph Transform["🔧 TRANSFORMATION"]
+        E1["dbt Models<br/>Standings • Top Scorers<br/>Head-to-Head • Player SCD2<br/>Aging Curve Features"]
+        E2["Round of 32 Qualifier Engine<br/>(Best 8 of 12 Third-Place Teams)"]
+    end
+
+    subgraph ML["🧠 ML LAYER"]
+        M1["scikit-learn / Spark MLlib<br/>xG Model + Win Probability"]
+    end
+
+    subgraph Content["🃏 CONTENT GENERATION"]
+        N1["Player Card Generator<br/>(Photo + Stats + Radar → PNG)"]
+    end
+
+    subgraph Serving["🚀 SERVING LAYER"]
+        F1["FastAPI<br/>REST Endpoints"]
+        F2["Catch-Me-Up Service<br/>(Diff Since Last Check)"]
+    end
+
+    subgraph Presentation["📊 DASHBOARDS"]
+        G1["React App — PRIMARY<br/>Recharts + D3<br/>Live Ticker • Aging Curves • H2H Radar<br/>(Deployed on Vercel)"]
+        G2["Power BI — Secondary<br/>Historical Analytics"]
+    end
+
+    subgraph CICD["🔁 CI/CD"]
+        I1["GitHub Actions<br/>(Test → Deploy)"]
+    end
+
+    subgraph Infra["⚙️ ORCHESTRATION & INFRA"]
+        H1["Apache Airflow"]
+        H2["Docker Compose"]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A3 --> B2
+    B1 --> C1
+    B2 --> DQ1
+    DQ1 --> D1
+    C1 --> C2
+    C2 --> D2
+    D1 --> E1
+    D2 --> E1
+    D1 --> E2
+    E2 --> F1
+    E1 --> M1
+    E1 --> N1
+    M1 --> F1
+    N1 --> F1
+    D2 --> F2
+    F1 --> G1
+    F1 --> G2
+    F2 --> G1
+
+    I1 -.tests and deploys.-> F1
+    I1 -.tests.-> E1
+    H1 -.orchestrates.-> B2
+    H1 -.orchestrates.-> E1
+    H1 -.orchestrates.-> M1
+    H1 -.orchestrates.-> N1
+    H2 -.containerizes.-> C1
+    H2 -.containerizes.-> C2
+    H2 -.containerizes.-> D1
+    H2 -.containerizes.-> D2
+    H2 -.containerizes.-> F1
