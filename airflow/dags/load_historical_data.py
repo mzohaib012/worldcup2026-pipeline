@@ -1,3 +1,10 @@
+"""
+load_historical_data.py
+
+Airflow DAG — Phase 1: one-time (manually triggered) backfill of historical
+World Cup data into PostgreSQL.
+"""
+
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -5,10 +12,13 @@ from airflow.operators.python import PythonOperator
 import sys
 sys.path.append("/opt/airflow/scripts/data_loader")
 
-from load_kaggle_historical import load_tournaments, load_teams, load_players, load_matches
-from db_connection import get_engine
+from load_kaggle_historical import run_full_load
 
-default_args = {"owner": "zohaib", "retries": 1}
+
+default_args = {
+    "owner": "zohaib",
+    "retries": 1,
+}
 
 with DAG(
     dag_id="load_historical_world_cup_data",
@@ -20,21 +30,7 @@ with DAG(
     tags=["worldcup", "phase1", "historical"],
 ) as dag:
 
-    def _load_tournaments():
-        load_tournaments(get_engine())
-
-    def _load_teams():
-        load_teams(get_engine())
-
-    def _load_players():
-        load_players(get_engine())
-
-    def _load_matches():
-        load_matches(get_engine())
-
-    t1 = PythonOperator(task_id="load_tournaments", python_callable=_load_tournaments)
-    t2 = PythonOperator(task_id="load_teams", python_callable=_load_teams)
-    t3 = PythonOperator(task_id="load_players", python_callable=_load_players)
-    t4 = PythonOperator(task_id="load_matches", python_callable=_load_matches)
-
-    t1 >> t2 >> t3 >> t4
+    full_load_task = PythonOperator(
+        task_id="run_full_historical_load",
+        python_callable=run_full_load,
+    )
