@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: worldcup
+    schema: public
+    tables:
+      - name: players
+      - name: match_goals
+      - name: matches
+      - name: teams
+      - name: tournaments
