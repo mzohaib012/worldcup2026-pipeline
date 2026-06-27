@@ -45,22 +45,27 @@ def run_consumer():
     count = 0
     for message in consumer:
         event = message.value
+    
+        
         cur.execute(
-            """
-            INSERT INTO match_events (time, match_id, home_team, away_team, status, minute, home_score, away_score)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                datetime.now(timezone.utc),
-                event["match_id"],
-                event["home_team"],
-                event["away_team"],
-                event["status"],
-                event.get("minute"),
-                event["home_score"],
-                event["away_score"],
-            )
+        """
+        INSERT INTO match_events (time, match_id, home_team, away_team, status, minute, home_score, away_score, stage, group_name, utc_date)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            datetime.now(timezone.utc),
+            event["match_id"],
+            event["home_team"],
+            event["away_team"],
+            event["status"],
+            event.get("minute"),
+            event["home_score"],
+            event["away_score"],
+            event.get("stage"),
+            event.get("group_name"),
+            event.get("utc_date"),
         )
+    )
         count += 1
         print(f"Inserted: {event['home_team']} vs {event['away_team']} | {event['status']}")
 

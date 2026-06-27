@@ -11,9 +11,11 @@ from airflow.operators.python import PythonOperator
 
 import sys
 sys.path.append("/opt/airflow/scripts/kafka_producer")
+sys.path.append("/opt/airflow/scripts")
 
 from live_match_producer import fetch_today_matches, push_to_kafka
 from timescale_consumer import run_consumer
+from sync_live_to_matches import sync
 
 default_args = {
     "owner": "zohaib",
@@ -38,7 +40,11 @@ with DAG(
     def _consume():
         run_consumer()
 
+    def _sync():
+        sync()
+
     produce_task = PythonOperator(task_id="produce_to_kafka", python_callable=_produce)
     consume_task = PythonOperator(task_id="consume_to_timescale", python_callable=_consume)
+    sync_task = PythonOperator(task_id="sync_to_matches_table", python_callable=_sync)
 
-    produce_task >> consume_task
+    produce_task >> consume_task >> sync_task

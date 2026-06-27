@@ -47,9 +47,12 @@ def push_to_kafka(matches):
             "minute": match.get("minute"),
             "home_score": match["score"]["fullTime"]["home"],
             "away_score": match["score"]["fullTime"]["away"],
+            "stage": match.get("stage"),
+            "group_name": match.get("group"),
             "utc_date": match["utcDate"],
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
+        
         producer.send(TOPIC, value=event)
         print(f"Pushed: {event['home_team']} vs {event['away_team']} | {event['status']}")
     producer.flush()
