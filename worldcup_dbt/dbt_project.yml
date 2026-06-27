@@ -32,5 +32,8 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   worldcup_dbt:
     # Config indicated by + and applies to all files under models/example/
-    example:
+  example:
       +materialized: view
+
+vars:
+  third_place_advance_count: 8
