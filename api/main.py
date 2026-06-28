@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "scripts" / "ml"))
 sys.path.append(str(Path(__file__).resolve().parents[1] / "scripts" / "content"))
@@ -31,6 +32,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 PLAYER_CARDS_DIR = Path(__file__).resolve().parents[1] / "data" / "player_cards"
 
 
@@ -143,10 +150,13 @@ def catch_me_up():
     ))
     summaries = []
     for _, row in df.iterrows():
+        home_score = int(row["home_score"]) if pd.notna(row["home_score"]) else None
+        away_score = int(row["away_score"]) if pd.notna(row["away_score"]) else None
+
         if row["status"] == "FINISHED":
-            summaries.append(f"{row['home_team']} {row['home_score']}-{row['away_score']} {row['away_team']} (FT)")
+            summaries.append(f"{row['home_team']} {home_score}-{away_score} {row['away_team']} (FT)")
         elif row["status"] in ("IN_PLAY", "LIVE"):
-            summaries.append(f"{row['home_team']} {row['home_score']}-{row['away_score']} {row['away_team']} (LIVE)")
+            summaries.append(f"{row['home_team']} {home_score}-{away_score} {row['away_team']} (LIVE)")
         else:
             summaries.append(f"{row['home_team']} vs {row['away_team']} - upcoming")
     return {"catch_me_up": summaries}

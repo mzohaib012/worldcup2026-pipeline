@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@theme {
+  --color-pitch-navy: #0b1929;
+  --color-pitch-navy-light: #14233d;
+  --color-gold: #ffd700;
+  --color-gold-dim: #b8960a;
+  --color-live-green: #00c853;
+  --color-slate: #94a3b8;
+  --font-display: "Oswald", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  background-color: var(--color-pitch-navy);
+  color: white;
+  margin: 0;
+}
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-scroll linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
