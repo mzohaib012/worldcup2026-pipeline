@@ -6,3 +6,5 @@ kafka-python
 dbt-postgres
 scikit-learn
 joblib
+matplotlib
+Pillow
