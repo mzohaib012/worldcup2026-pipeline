@@ -1,4 +1,5 @@
 import LiveTicker from "./components/LiveTicker";
+import Standings from "./components/Standings";
 
 function App() {
   return (
@@ -11,9 +12,7 @@ function App() {
         >
           World Cup 2026 Dashboard
         </h1>
-        <p className="text-[var(--color-slate)] mt-2">
-          More sections coming next: standings, top scorers, predictions, player cards.
-        </p>
+        <Standings />
       </main>
     </div>
   );
