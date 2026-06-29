@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
+import SectionHeader from "./SectionHeader";
 
 export default function Standings() {
   const [standings, setStandings] = useState([]);
@@ -27,12 +28,7 @@ export default function Standings() {
 
   return (
     <section className="mt-12">
-      <h2
-        className="text-2xl font-bold text-[var(--color-gold)] mb-4"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Group Standings
-      </h2>
+      <SectionHeader eyebrow="GROUP STAGE" title="Group Standings" />
 
       {loading && <p className="text-[var(--color-slate)]">Loading standings...</p>}
       {error && <p className="text-[var(--color-slate)]">{error}</p>}
@@ -55,7 +51,7 @@ export default function Standings() {
             ))}
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto card-depth rounded-lg bg-[var(--color-pitch-navy-light)] p-4">
             <table className="w-full text-sm" style={{ fontFamily: "var(--font-mono)" }}>
               <thead>
                 <tr className="text-[var(--color-gold)] border-b border-[var(--color-gold-dim)] text-left">

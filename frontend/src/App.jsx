@@ -1,20 +1,20 @@
+import Header from "./components/Header";
+import Hero from "./components/Hero";
 import LiveTicker from "./components/LiveTicker";
 import Standings from "./components/Standings";
 import TopScorers from "./components/TopScorers";
+import PredictionWidget from "./components/PredictionWidget";
 
 function App() {
   return (
     <div className="min-h-screen">
+      <Header />
       <LiveTicker />
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        <h1
-          className="text-4xl font-bold text-[var(--color-gold)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          World Cup 2026 Dashboard
-        </h1>
+      <Hero />
+      <main className="max-w-6xl mx-auto px-4 py-10">
         <Standings />
         <TopScorers />
+        <PredictionWidget />
       </main>
     </div>
   );

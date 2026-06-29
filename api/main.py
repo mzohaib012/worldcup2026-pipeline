@@ -85,6 +85,12 @@ def get_top_scorers(limit: int = 10):
     df = pd.read_sql(f"SELECT * FROM top_scorers LIMIT {limit}", engine)
     return df.to_dict(orient="records")
 
+@app.get("/teams")
+def get_teams():
+    engine = get_engine()
+    df = pd.read_sql("SELECT DISTINCT team_name FROM teams ORDER BY team_name", engine)
+    return df["team_name"].tolist()
+
 
 @app.get("/head-to-head/{team_a}/{team_b}")
 def get_head_to_head(team_a: str, team_b: str):

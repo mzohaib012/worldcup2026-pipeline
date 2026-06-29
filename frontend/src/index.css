@@ -1,9 +1,10 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 @theme {
   --color-pitch-navy: #0b1929;
   --color-pitch-navy-light: #14233d;
+  --color-pitch-black: #030712;
   --color-gold: #ffd700;
   --color-gold-dim: #b8960a;
   --color-live-green: #00c853;
@@ -12,24 +13,77 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   background-color: var(--color-pitch-navy);
   color: white;
   margin: 0;
 }
-@keyframes marquee-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
 
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 .marquee-track {
   animation: marquee-scroll linear infinite;
 }
-
 .marquee-track:hover {
   animation-play-state: paused;
+}
+
+.stadium-glow {
+  position: relative;
+  background-color: var(--color-pitch-black);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255, 215, 0, 0.16), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(0, 200, 83, 0.10), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(255, 215, 0, 0.08), transparent 50%);
+}
+
+.pitch-stripes {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 2px,
+    transparent 2px,
+    transparent 64px
+  );
+  pointer-events: none;
+}
+
+.broadcast-bar {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(100deg, var(--color-gold) 0%, var(--color-gold-dim) 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  padding: 6px 28px 6px 16px;
+}
+
+.broadcast-select {
+  appearance: none;
+  background-color: var(--color-pitch-navy-light);
+  border: 1px solid var(--color-gold-dim);
+  border-radius: 4px;
+  padding: 10px 36px 10px 12px;
+  font-size: 0.875rem;
+  color: white;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-gold) 50%),
+                     linear-gradient(135deg, var(--color-gold) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 13px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.broadcast-select:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.card-depth {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.08);
 }

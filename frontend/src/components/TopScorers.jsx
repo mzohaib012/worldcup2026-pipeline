@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api, { API_BASE_URL } from "../api/client";
+import SectionHeader from "./SectionHeader";
 
 export default function TopScorers({ limit = 12 }) {
   const [scorers, setScorers] = useState([]);
@@ -15,12 +16,7 @@ export default function TopScorers({ limit = 12 }) {
 
   return (
     <section className="mt-16">
-      <h2
-        className="text-2xl font-bold text-[var(--color-gold)] mb-4"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        All-Time Top Scorers
-      </h2>
+      <SectionHeader eyebrow="ALL-TIME LEADERS" title="Top Scorers" />
 
       {loading && <p className="text-[var(--color-slate)]">Loading top scorers...</p>}
 
@@ -29,7 +25,7 @@ export default function TopScorers({ limit = 12 }) {
           {scorers.map((s, i) => (
             <div
               key={s.player_id}
-              className="group relative rounded-lg overflow-hidden border border-[var(--color-gold-dim)] bg-[var(--color-pitch-navy-light)] hover:border-[var(--color-gold)] transition"
+              className="group relative rounded-lg overflow-hidden border border-[var(--color-gold-dim)] bg-[var(--color-pitch-navy-light)] card-depth hover:border-[var(--color-gold)] hover:shadow-[0_8px_30px_rgba(255,215,0,0.25)] transition duration-300"
             >
               <span
                 className="absolute top-1 left-1 z-10 text-xs font-bold bg-[var(--color-gold)] text-[var(--color-pitch-navy)] rounded px-1.5 py-0.5"
