@@ -1,5 +1,6 @@
 import LiveTicker from "./components/LiveTicker";
 import Standings from "./components/Standings";
+import TopScorers from "./components/TopScorers";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
           World Cup 2026 Dashboard
         </h1>
         <Standings />
+        <TopScorers />
       </main>
     </div>
   );
