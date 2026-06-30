@@ -27,7 +27,7 @@ export default function Standings() {
     .sort((a, b) => a.group_rank - b.group_rank);
 
   return (
-    <section className="mt-12">
+    <section id="standings" className="mt-12 scroll-mt-20">
       <SectionHeader eyebrow="GROUP STAGE" title="Group Standings" />
 
       {loading && <p className="text-[var(--color-slate)]">Loading standings...</p>}

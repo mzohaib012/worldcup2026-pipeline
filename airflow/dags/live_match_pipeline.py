@@ -26,7 +26,7 @@ with DAG(
     dag_id="live_world_cup_2026_pipeline",
     default_args=default_args,
     description="Fetch live 2026 World Cup matches -> Kafka -> TimescaleDB",
-    schedule="*/10 * * * *",   # every 10 minutes
+    schedule="*/2 * * * *",   # every 2 minutes — tighter loop for live status accuracy
     start_date=datetime(2026, 6, 1),
     catchup=False,
     tags=["worldcup", "phase2", "live"],

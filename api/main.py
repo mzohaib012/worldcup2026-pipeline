@@ -41,13 +41,37 @@ app.add_middleware(
 PLAYER_CARDS_DIR = Path(__file__).resolve().parents[1] / "data" / "player_cards"
 
 
+# Single shared engine per database, created once at startup instead of
+# per-request. Creating a new engine on every call (as this used to do)
+# opens a fresh connection each time without closing the old one, which
+# exhausts Postgres's max_connections under repeated polling (e.g. the
+# live-status endpoint, polled every 15s).
+_main_engine = create_engine(
+    f"postgresql+psycopg2://{os.getenv('HOST_POSTGRES_USER', 'postgres')}:"
+    f"{os.getenv('HOST_POSTGRES_PASSWORD', '')}@"
+    f"{os.getenv('HOST_POSTGRES_HOST', 'localhost')}:"
+    f"{os.getenv('HOST_POSTGRES_PORT', '5432')}/"
+    f"{os.getenv('HOST_POSTGRES_DB', 'worldcup2026')}",
+    pool_size=5,
+    max_overflow=2,
+    pool_pre_ping=True,
+)
+
+_timescale_engine = create_engine(
+    f"postgresql+psycopg2://tsuser:tspass@"
+    f"{os.getenv('TIMESCALE_HOST_LOCAL', 'localhost')}:5433/matchevents",
+    pool_size=5,
+    max_overflow=2,
+    pool_pre_ping=True,
+)
+
+
 def get_engine():
-    host = os.getenv("HOST_POSTGRES_HOST", "localhost")
-    port = os.getenv("HOST_POSTGRES_PORT", "5432")
-    db = os.getenv("HOST_POSTGRES_DB", "worldcup2026")
-    user = os.getenv("HOST_POSTGRES_USER", "postgres")
-    password = os.getenv("HOST_POSTGRES_PASSWORD", "")
-    return create_engine(f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}")
+    return _main_engine
+
+
+def get_timescale_engine():
+    return _timescale_engine
 
 
 @app.get("/")
@@ -89,7 +113,18 @@ def get_top_scorers(limit: int = 10):
 def get_teams():
     engine = get_engine()
     df = pd.read_sql("SELECT DISTINCT team_name FROM teams ORDER BY team_name", engine)
+    df = df.dropna(subset=["team_name"])
     return df["team_name"].tolist()
+
+@app.get("/knockout-bracket/{tournament_id}")
+def get_knockout_bracket(tournament_id: str):
+    engine = get_engine()
+    df = pd.read_sql(
+        "SELECT * FROM knockout_bracket WHERE tournament_id = %(tid)s",
+        engine, params={"tid": tournament_id}
+    )
+    df = df.astype(object).where(pd.notna(df), None)
+    return df.to_dict(orient="records")
 
 
 @app.get("/head-to-head/{team_a}/{team_b}")
@@ -151,9 +186,8 @@ def catch_me_up():
         ORDER BY time DESC
         LIMIT 10
     """
-    df = pd.read_sql(query, create_engine(
-        f"postgresql+psycopg2://tsuser:tspass@{os.getenv('TIMESCALE_HOST_LOCAL', 'localhost')}:5433/matchevents"
-    ))
+    df = pd.read_sql(query, get_timescale_engine())
+  
     summaries = []
     for _, row in df.iterrows():
         home_score = int(row["home_score"]) if pd.notna(row["home_score"]) else None
@@ -166,3 +200,52 @@ def catch_me_up():
         else:
             summaries.append(f"{row['home_team']} vs {row['away_team']} - upcoming")
     return {"catch_me_up": summaries}
+
+@app.get("/live-status")
+def get_live_status():
+    engine = get_timescale_engine()
+
+    query = """
+        SELECT DISTINCT ON (match_id)
+            match_id, home_team, away_team, status, minute,
+            home_score, away_score, utc_date
+        FROM match_events
+        WHERE time > NOW() - INTERVAL '12 hours'
+        ORDER BY match_id, time DESC
+    """
+    df = pd.read_sql(query, engine)
+
+    live_statuses = {"IN_PLAY", "PAUSED"}
+    live_df = df[df["status"].isin(live_statuses)]
+
+    if not live_df.empty:
+        row = live_df.iloc[0]
+        minute = int(row["minute"]) if pd.notna(row["minute"]) else None
+        if row["status"] == "PAUSED":
+            status_label = "Half-Time"
+        elif minute and minute > 45:
+            status_label = "Second Half"
+        else:
+            status_label = "First Half"
+
+        return {
+            "mode": "live",
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+            "home_score": int(row["home_score"]) if pd.notna(row["home_score"]) else 0,
+            "away_score": int(row["away_score"]) if pd.notna(row["away_score"]) else 0,
+            "status_label": status_label,
+            "minute": minute,
+        }
+
+    upcoming = df[df["status"].isin(["SCHEDULED", "TIMED"])].sort_values("utc_date")
+    if not upcoming.empty:
+        row = upcoming.iloc[0]
+        return {
+            "mode": "countdown",
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+            "kickoff_utc": row["utc_date"].isoformat() if pd.notna(row["utc_date"]) else None,
+        }
+
+    return {"mode": "none"}

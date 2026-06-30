@@ -42,7 +42,7 @@ export default function PredictionWidget() {
   };
 
   return (
-    <section className="mt-16">
+    <section id="predictor" className="mt-16 scroll-mt-20">
       <SectionHeader eyebrow="MACHINE LEARNING" title="Win Probability Predictor" />
 
       <div className="card-depth bg-[var(--color-pitch-navy-light)] rounded-lg p-6">
