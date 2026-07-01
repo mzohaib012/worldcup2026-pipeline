@@ -55,6 +55,7 @@ _main_engine = create_engine(
     pool_size=5,
     max_overflow=2,
     pool_pre_ping=True,
+    connect_args={"options": "-c client_encoding=UTF8"},
 )
 
 _timescale_engine = create_engine(
@@ -115,6 +116,23 @@ def get_teams():
     df = pd.read_sql("SELECT DISTINCT team_name FROM teams ORDER BY team_name", engine)
     df = df.dropna(subset=["team_name"])
     return df["team_name"].tolist()
+
+@app.get("/schedule/{tournament_id}")
+def get_schedule(tournament_id: str):
+    engine = get_engine()
+    query = """
+        SELECT m.match_id, m.match_date, m.stage, m.group_name,
+               th.team_name AS home_team, ta.team_name AS away_team,
+               m.home_score, m.away_score
+        FROM matches m
+        LEFT JOIN teams th ON th.team_id = m.home_team_id
+        LEFT JOIN teams ta ON ta.team_id = m.away_team_id
+        WHERE m.tournament_id = %(tid)s
+        ORDER BY m.match_date
+    """
+    df = pd.read_sql(query, engine, params={"tid": tournament_id})
+    df = df.astype(object).where(pd.notna(df), None)
+    return df.to_dict(orient="records")
 
 @app.get("/knockout-bracket/{tournament_id}")
 def get_knockout_bracket(tournament_id: str):
@@ -249,3 +267,37 @@ def get_live_status():
         }
 
     return {"mode": "none"}
+
+@app.get("/players")
+def get_players():
+    engine = get_engine()
+    df = pd.read_sql(
+        "SELECT player_id, full_name FROM players ORDER BY full_name",
+        engine
+    )
+    df = df.dropna(subset=["full_name"])
+    return df.to_dict(orient="records")
+
+@app.get("/player-stats/{player_name}")
+def get_player_stats(player_name: str):
+    engine = get_engine()
+    query = """
+        SELECT
+            p.full_name,
+            COUNT(g.goal_id) AS total_goals,
+            COUNT(DISTINCT m.tournament_id) AS tournaments,
+            SUM(CASE WHEN g.is_penalty THEN 1 ELSE 0 END) AS penalties,
+            SUM(CASE WHEN g.is_own_goal THEN 1 ELSE 0 END) AS own_goals,
+            ROUND(COUNT(g.goal_id)::numeric /
+                NULLIF(COUNT(DISTINCT m.tournament_id), 0), 2) AS goals_per_tournament
+        FROM players p
+        LEFT JOIN match_goals g ON p.player_id = g.player_id
+        LEFT JOIN matches m ON g.match_id = m.match_id
+        WHERE p.full_name ILIKE %(name)s
+        GROUP BY p.full_name
+    """
+    df = pd.read_sql(query, engine, params={"name": f"%{player_name}%"})
+    df = df.astype(object).where(pd.notna(df), None)
+    if df.empty:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return df.to_dict(orient="records")[0]

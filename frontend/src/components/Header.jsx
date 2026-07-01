@@ -4,6 +4,8 @@
     { label: "Bracket", href: "#bracket" },
     { label: "Top Scorers", href: "#top-scorers" },
     { label: "Predictor", href: "#predictor" },
+    { label: "Schedule", href: "#schedule" },
+    { label: "H2H", href: "#h2h" },
   ];
 
   return (
