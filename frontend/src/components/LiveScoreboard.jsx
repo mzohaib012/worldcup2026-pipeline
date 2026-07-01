@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "../api/client";
+import { GoalAnimation, WinnerAnimation } from "./CelebrationOverlay";
 
 function useCountdown(targetIso) {
   const [timeLeft, setTimeLeft] = useState(null);
@@ -47,21 +48,67 @@ function TimeBlock({ value, label }) {
 export default function LiveScoreboard() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showGoal, setShowGoal] = useState(false);
+  const [showWinner, setShowWinner] = useState(false);
+  const [winner, setWinner] = useState("");
+  const prevScoreRef = useRef(null);
+  const prevStatusRef = useRef(null);
+  const prevTeamsRef = useRef(null);
 
   useEffect(() => {
-    const fetch = () => {
+    const fetchStatus = () => {
       api
         .get("/live-status")
-        .then((res) => setStatus(res.data))
+        .then((res) => {
+          const data = res.data;
+
+          // Goal animation: total score increased while match is live
+          if (prevScoreRef.current && data.mode === "live") {
+            const prevTotal = prevScoreRef.current.home + prevScoreRef.current.away;
+            const newTotal = (data.home_score || 0) + (data.away_score || 0);
+            if (newTotal > prevTotal) setShowGoal(true);
+          }
+          if (data.mode === "live") {
+            prevScoreRef.current = {
+              home: data.home_score || 0,
+              away: data.away_score || 0,
+            };
+            prevTeamsRef.current = {
+              home: data.home_team,
+              away: data.away_team,
+            };
+          }
+
+          // Winner animation: match just finished
+          if (prevStatusRef.current === "live" && data.mode === "countdown") {
+            if (prevScoreRef.current && prevTeamsRef.current) {
+              const h = prevScoreRef.current.home;
+              const a = prevScoreRef.current.away;
+              if (h > a) {
+                setWinner(prevTeamsRef.current.home);
+                setShowWinner(true);
+              } else if (a > h) {
+                setWinner(prevTeamsRef.current.away);
+                setShowWinner(true);
+              }
+            }
+          }
+
+          prevStatusRef.current = data.mode;
+          setStatus(data);
+        })
         .catch((err) => console.error("Failed to fetch live status:", err))
         .finally(() => setLoading(false));
     };
-    fetch();
-    const interval = setInterval(fetch, 15000);
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  const countdown = useCountdown(status?.mode === "countdown" ? status.kickoff_utc : null);
+  const countdown = useCountdown(
+    status?.mode === "countdown" ? status.kickoff_utc : null
+  );
 
   if (loading) {
     return (
@@ -114,7 +161,9 @@ export default function LiveScoreboard() {
               className="text-5xl md:text-6xl font-bold text-[var(--color-gold)] tabular-nums"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              {status.home_score} <span className="text-white/30 mx-1">-</span> {status.away_score}
+              {status.home_score}{" "}
+              <span className="text-white/30 mx-1">-</span>{" "}
+              {status.away_score}
             </p>
             <p
               className="text-lg md:text-2xl font-semibold text-white text-left w-32 md:w-48 truncate"
@@ -124,11 +173,18 @@ export default function LiveScoreboard() {
             </p>
           </div>
         </div>
+
+        <GoalAnimation show={showGoal} onDone={() => setShowGoal(false)} />
+        <WinnerAnimation
+          show={showWinner}
+          winner={winner}
+          onDone={() => setShowWinner(false)}
+        />
       </div>
     );
   }
 
-  // countdown mode
+  // Countdown mode
   return (
     <div className="stadium-glow relative overflow-hidden">
       <div className="pitch-stripes" />
@@ -143,7 +199,9 @@ export default function LiveScoreboard() {
           className="text-xl md:text-2xl font-semibold text-white mb-8"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {status.home_team} <span className="text-[var(--color-gold)]">vs</span> {status.away_team}
+          {status.home_team}{" "}
+          <span className="text-[var(--color-gold)]">vs</span>{" "}
+          {status.away_team}
         </p>
 
         {countdown && (
@@ -158,6 +216,13 @@ export default function LiveScoreboard() {
           </div>
         )}
       </div>
+
+      <GoalAnimation show={showGoal} onDone={() => setShowGoal(false)} />
+      <WinnerAnimation
+        show={showWinner}
+        winner={winner}
+        onDone={() => setShowWinner(false)}
+      />
     </div>
   );
 }
