@@ -216,6 +216,7 @@ export default function LiveScoreboard() {
           </div>
         )}
       </div>
+       
 
       <GoalAnimation show={showGoal} onDone={() => setShowGoal(false)} />
       <WinnerAnimation
